@@ -8,8 +8,8 @@ import { type } from "@testing-library/user-event/dist/type";
 const Login = (props) => {
   // const [inputEmail, setInputEmail] = useState("");
   // const [emailIsValid, setEmailIsValid] = useState();
-  const [inputPassword, setInputPassword] = useState("");
-  const [passwordIsValid, setPasswordIsValid] = useState();
+  // const [inputPassword, setInputPassword] = useState("");
+  // const [passwordIsValid, setPasswordIsValid] = useState();
   const [formIsValid, setFormIsValid] = useState(false);
 
   const emailReducer = (prevState, action) => {
@@ -33,48 +33,75 @@ const Login = (props) => {
     };
   };
 
+
+  // prevState - предыдущее состояние, action - текущее состояние
+  const passwordReducer = (prevState, action) => {
+    if (action.type === 'USER_INPUT') {
+      return {
+        value: action.value,
+        isValid: action.value.trim().length > 7
+      };
+    }
+
+    if (action.type === 'USER_BLUR') {
+      return {
+        value: prevState.value,
+        isValid: prevState.value.trim().length > 7
+      };
+    }
+
+    return {
+      value: '',
+      isValid: false
+    };
+  };
+
   const [emailState, dispatchEmailState] = useReducer(emailReducer, { value: '', isValid: false });
+  const [passwordState, dispatchPasswordState] = useReducer(passwordReducer, { value: '', isValid: false });
 
-  // useEffect(()=>{
-  //   const timer = setTimeout(() => {
-  //     console.log('effect applying');
-  //     setFormIsValid(
-  //       inputEmail.includes("@") && inputPassword.trim().length > 7
-  //     );
-  //   }, 500);
+  const { isValid: emailIsValid } = emailState;
+  const { isValid: passwordIsValid } = passwordState;
 
-  //   return () => {
-  //     clearTimeout(timer);
-  //     console.log('clearning');
-  //   }
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('effect applying');
+      setFormIsValid(
+        emailIsValid && passwordIsValid
+      );
+    }, 1000);
 
-  // }, [inputEmail, inputPassword]);
+    return () => {
+      clearTimeout(timer);
+      console.log('clearning');
+    }
+
+  }, [emailIsValid, passwordIsValid]);
 
   const emailChangeHandler = (event) => {
     dispatchEmailState({ type: 'USER_INPUT', value: event.target.value });
     setFormIsValid(
-      emailState.isValid && inputPassword.trim().length > 7
+      emailState.isValid && passwordState.isValid
     );
   };
 
   const passwordChangeHandler = (event) => {
-    setInputPassword(event.target.value);
+    dispatchPasswordState({ type: 'USER_INPUT', value: event.target.value })
     setFormIsValid(
-      emailState.isValid && event.target.value.trim().length > 7
+      emailState.isValid && passwordState.isValid
     );
   };
 
   const validateEmailHandler = () => {
-    dispatchEmailState({ type: 'INPUT_BLUR' })
+    dispatchEmailState({ type: 'INPUT_BLUR' });
   };
 
   const validatePasswordHandler = () => {
-    setPasswordIsValid(inputPassword.trim().length > 7);
+    dispatchPasswordState({ type: 'INPUT_BLUR' });
   };
 
   const submitHandler = (event) => {
     event.preventDefault();
-    props.onLogin(emailState.value, inputPassword);
+    props.onLogin(emailState.value, passwordState.value);
   };
 
   return (
@@ -94,14 +121,14 @@ const Login = (props) => {
           />
         </div>
         <div
-          className={`${styles.control} ${passwordIsValid === false ? styles.invalid : ""
+          className={`${styles.control} ${passwordState.isValid === false ? styles.invalid : ""
             }`}
         >
           <label htmlFor="password">Пароль</label>
           <input
             type="password"
             id="password"
-            value={inputPassword}
+            value={passwordState.value}
             onChange={passwordChangeHandler}
             onBlur={validatePasswordHandler}
           />
